@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Notifications</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2em; }
+    h1 { color: #333; }
+    #notifications-list { list-style-type: none; padding: 0; }
+    #notifications-list li { background: #f0f0f0; margin-bottom: 0.5em; padding: 0.5em; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <h1>Notifications</h1>
+  <ul id="notifications-list"></ul>
+  
+  <script>
+    // Determine proper protocol (wss for HTTPS, ws for HTTP)
+    const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    // Create WebSocket connection to the notifications endpoint
+    const notificationsSocket = new WebSocket(
+        wsProtocol + '//' + window.location.host + '/ws/notifications/'
+    );
+
+    // When a notification message is received, append it to the list
+    notificationsSocket.onmessage = function(e) {
+      const data = JSON.parse(e.data);
+      console.log("Notification received:", data.message);
+      const listItem = document.createElement("li");
+      listItem.textContent = data.message;
+      document.getElementById("notifications-list").appendChild(listItem);
+    };
+
+    notificationsSocket.onopen = function() {
+      console.log("Connected to notifications WebSocket");
+    };
+
+    notificationsSocket.onerror = function(e) {
+      console.error("WebSocket error:", e);
+    };
+  </script>
+</body>
+</html>
