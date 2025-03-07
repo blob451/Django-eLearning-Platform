@@ -43,7 +43,7 @@ INSTALLED_APPS = [
     'channels',
     'celery',  
 
-    # Your custom apps
+    # Custom apps
     'users',
     'courses',
     'chat', 
