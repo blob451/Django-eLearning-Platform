@@ -5,4 +5,8 @@ class IsTeacher(permissions.BasePermission):
     Allows access only to teacher users.
     """
     def has_permission(self, request, view):
-        return bool(request.user and request.user.is_authenticated and request.user.role == 'teacher')
+        return bool(
+            request.user 
+            and request.user.is_authenticated 
+            and request.user.role == 'teacher'
+        )

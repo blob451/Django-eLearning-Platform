@@ -4,10 +4,10 @@ from django.db import models
 class User(AbstractUser):
     STUDENT = 'student'
     TEACHER = 'teacher'
-    ROLE_CHOICES = (
+    ROLE_CHOICES = [
         (STUDENT, 'Student'),
         (TEACHER, 'Teacher'),
-    )
+    ]
     role = models.CharField(
         max_length=10,
         choices=ROLE_CHOICES,
