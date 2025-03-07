@@ -21,11 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-<<<<<<< HEAD
 SECRET_KEY = 'django-insecure-$h5^y-i&o#c11xmd-2=j8@k6mu-fo$v4cy@*14l8qsg!*e!7y)'
-=======
-SECRET_KEY = 'django-insecure-j#3q3$@r%w#07@h&tb%hhruj55s*^=dnmd77mz9oust)oqaa@n'
->>>>>>> d91aa4e (2 - Basic app configurations and models)
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -51,12 +47,8 @@ INSTALLED_APPS = [
     # Custom apps
     'users',
     'courses',
-<<<<<<< HEAD
-    'chat', 
-=======
     'chat',  
 
->>>>>>> d91aa4e (2 - Basic app configurations and models)
 ]
 
 MIDDLEWARE = [
@@ -140,12 +132,9 @@ STATIC_URL = 'static/'
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
-<<<<<<< HEAD
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-=======
-# CUSTOM CODE
 
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+# CUSTOM CODE
 
 ASGI_APPLICATION = 'elearning.asgi.application'
 
@@ -162,6 +151,5 @@ CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
 
 AUTH_USER_MODEL = 'users.User'
 
->>>>>>> d91aa4e (2 - Basic app configurations and models)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
