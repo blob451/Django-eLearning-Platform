@@ -7,7 +7,6 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         if not user.is_authenticated:
             await self.close()
             return
-        # Each authenticated user joins a group named "notifications_<user.id>"
         self.group_name = f'notifications_{user.id}'
         await self.channel_layer.group_add(
             self.group_name,
@@ -22,8 +21,7 @@ class NotificationConsumer(AsyncWebsocketConsumer):
         )
 
     async def receive(self, text_data):
-        # Typically, notifications are pushed from server; client messages can be ignored.
-        pass
+        pass  # Typically notifications are pushed by the server
 
     async def notify(self, event):
         message = event['message']
