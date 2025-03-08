@@ -29,10 +29,18 @@
           <td>{{ instance.instructor.username }}</td>
           <td>{{ instance.enrollments.count }} / 30</td>
           <td>
-            {% if instance.status == "Upcoming" and instance.enrollments.count < 30 %}
-              <a href="{% url 'enroll_instance' instance.id %}" class="btn btn-primary">Enrol</a>
+            {% if user.is_authenticated %}
+              {% if instance.status == "Upcoming" and instance.enrollments.count < 30 %}
+                <a href="{% url 'enroll_instance' instance.id %}" class="btn btn-primary">Enrol</a>
+              {% else %}
+                <span class="text-muted">Not Available</span>
+              {% endif %}
             {% else %}
-              <span class="text-muted">Not Available</span>
+              {% if instance.status == "Upcoming" %}
+                <a href="{% url 'login' %}" class="btn btn-secondary">Login to Enrol</a>
+              {% else %}
+                <span class="text-muted">Not Available</span>
+              {% endif %}
             {% endif %}
           </td>
         </tr>

@@ -4,16 +4,37 @@
 
 {% block content %}
   <h1>Dashboard</h1>
-  <h2>Your Enrolled Courses</h2>
-  {% if enrollments %}
-    <ul class="list-group">
-      {% for enrollment in enrollments %}
-        <li class="list-group-item">
-          {{ enrollment.course_instance.course.name }} - {{ enrollment.course_instance.semester }} (Status: {{ enrollment.course_instance.status }})
-        </li>
-      {% endfor %}
-    </ul>
-  {% else %}
-    <p>You are not enrolled in any courses yet.</p>
-  {% endif %}
+
+  <h2>My Upcoming Courses</h2>
+  {% for enrollment in enrollments %}
+    {% if enrollment.course_instance.status == "Upcoming" %}
+      <div class="mb-2 p-2 border rounded">
+        <strong>{{ enrollment.course_instance.course.name }}</strong>
+         - {{ enrollment.course_instance.semester }}
+        (Starts: {{ enrollment.course_instance.start_date }})
+      </div>
+    {% endif %}
+  {% endfor %}
+
+  <h2>My Active Courses</h2>
+  {% for enrollment in enrollments %}
+    {% if enrollment.course_instance.status == "Active" %}
+      <div class="mb-2 p-2 border rounded">
+        <strong>{{ enrollment.course_instance.course.name }}</strong>
+         - {{ enrollment.course_instance.semester }}
+        (Ends: {{ enrollment.course_instance.end_date }})
+      </div>
+    {% endif %}
+  {% endfor %}
+
+  <h2>My Past Courses</h2>
+  {% for enrollment in enrollments %}
+    {% if enrollment.course_instance.status == "Past" %}
+      <div class="mb-2 p-2 border rounded">
+        <strong>{{ enrollment.course_instance.course.name }}</strong>
+         - {{ enrollment.course_instance.semester }}
+        (Ended: {{ enrollment.course_instance.end_date }})
+      </div>
+    {% endif %}
+  {% endfor %}
 {% endblock %}

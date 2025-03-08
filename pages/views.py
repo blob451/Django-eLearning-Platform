@@ -40,6 +40,7 @@ def enroll_in_instance(request, instance_id):
     messages.success(request, "You have been enrolled successfully!")
     return redirect('dashboard')
 
+@login_required
 def chat_view(request):
     return render(request, 'chat.html')
 
@@ -56,3 +57,17 @@ def signup_view(request):
         messages.success(request, "Account created. Await approval.")
         return redirect('login')
     return render(request, 'login.html')
+
+def custom_logout_view(request):
+    from django.contrib.auth import logout
+    logout(request)
+    messages.success(request, "Logout successfully")
+    return redirect('home')
+
+@login_required
+def instructor_manage_view(request):
+    if request.user.role != 'teacher' and not request.user.is_superuser:
+        messages.error(request, "Only instructors can access the management page.")
+        return redirect('home')
+    instances = CourseInstance.objects.filter(instructor=request.user)
+    return render(request, 'instructor_manage.html', {'instances': instances})

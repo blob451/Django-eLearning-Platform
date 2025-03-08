@@ -1,17 +1,14 @@
 {% extends 'base.html' %}
-
 {% block title %}Chat{% endblock %}
-
 {% block content %}
   <h1>Real-Time Chat</h1>
   <div id="chat-log" style="border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll;"></div>
   <input type="text" id="chat-message-input" class="form-control" placeholder="Type your message...">
   <button id="chat-message-submit" class="btn btn-primary mt-2">Send</button>
 {% endblock %}
-
 {% block extra_js %}
 <script>
-  const roomName = "default"; // Use a default room or generate dynamically
+  const roomName = "default";  // or dynamic
   const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   const chatSocket = new WebSocket(
       wsProtocol + '//' + window.location.host + '/ws/chat/' + roomName + '/'
@@ -23,6 +20,7 @@
     const messageElem = document.createElement("div");
     messageElem.textContent = data.message;
     chatLog.appendChild(messageElem);
+    chatLog.scrollTop = chatLog.scrollHeight; // auto-scroll
   };
 
   document.getElementById("chat-message-submit").onclick = function() {
