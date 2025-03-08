@@ -1,9 +1,42 @@
 {% extends 'base.html' %}
 
-{% block title %}Course Details{% endblock %}
+{% block title %}{{ course.name }} Details{% endblock %}
 
 {% block content %}
-  <h1>Course Details</h1>
-  <p>Course ID: {{ course_id }}</p>
-  <!-- Include details like course description, materials, feedback, and (if teacher) enrolled students -->
+  <h1>{{ course.name }} Details</h1>
+  <p>{{ course.description }}</p>
+
+  <h2>Offerings</h2>
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Semester</th>
+        <th>Start Date</th>
+        <th>End Date</th>
+        <th>Status</th>
+        <th>Instructor</th>
+        <th>Enrolled</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for instance in instances %}
+        <tr>
+          <td>{{ instance.semester }}</td>
+          <td>{{ instance.start_date }}</td>
+          <td>{{ instance.end_date }}</td>
+          <td>{{ instance.status }}</td>
+          <td>{{ instance.instructor.username }}</td>
+          <td>{{ instance.enrollments.count }} / 30</td>
+          <td>
+            {% if instance.status == "Upcoming" and instance.enrollments.count < 30 %}
+              <a href="{% url 'enroll_instance' instance.id %}" class="btn btn-primary">Enrol</a>
+            {% else %}
+              <span class="text-muted">Not Available</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
 {% endblock %}

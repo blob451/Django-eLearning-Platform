@@ -48,7 +48,7 @@ ROOT_URLCONF = 'elearning.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],  # Look for templates in the "templates" folder at the project root.
+        'DIRS': [BASE_DIR / 'templates'],  # Our templates folder
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -64,10 +64,11 @@ TEMPLATES = [
 WSGI_APPLICATION = 'elearning.wsgi.application'
 ASGI_APPLICATION = 'elearning.asgi.application'
 
+# DATABASES: Change the database name to "Courpera.sqlite3"
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'NAME': BASE_DIR / 'Courpera.sqlite3',
     }
 }
 
@@ -111,5 +112,6 @@ CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# Login and Logout redirects
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'

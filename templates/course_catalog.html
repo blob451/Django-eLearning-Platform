@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block title %}Course Catalog{% endblock %}
+
+{% block content %}
+  <h1>Course Catalog</h1>
+  <ul class="list-group">
+    {% for course in courses %}
+      <li class="list-group-item">
+        <a href="{% url 'course_detail' course.pk %}">{{ course.name }}</a>
+      </li>
+    {% empty %}
+      <li class="list-group-item">No courses available.</li>
+    {% endfor %}
+  </ul>
+{% endblock %}

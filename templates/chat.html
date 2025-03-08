@@ -11,7 +11,7 @@
 
 {% block extra_js %}
 <script>
-  const roomName = "default"; // Default room; update dynamically as needed
+  const roomName = "default"; // Use a default room or generate dynamically
   const wsProtocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   const chatSocket = new WebSocket(
       wsProtocol + '//' + window.location.host + '/ws/chat/' + roomName + '/'

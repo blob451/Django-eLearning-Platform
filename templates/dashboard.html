@@ -4,6 +4,16 @@
 
 {% block content %}
   <h1>Dashboard</h1>
-  <p>This is your dashboard. It displays your enrolled courses, upcoming deadlines, and status updates.</p>
-  <!-- Dynamic dashboard content goes here -->
+  <h2>Your Enrolled Courses</h2>
+  {% if enrollments %}
+    <ul class="list-group">
+      {% for enrollment in enrollments %}
+        <li class="list-group-item">
+          {{ enrollment.course_instance.course.name }} - {{ enrollment.course_instance.semester }} (Status: {{ enrollment.course_instance.status }})
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>You are not enrolled in any courses yet.</p>
+  {% endif %}
 {% endblock %}
