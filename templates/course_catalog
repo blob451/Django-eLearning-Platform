@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+
+{% block title %}Course Catalog{% endblock %}
+
+{% block content %}
+  <h1>Course Catalog</h1>
+  <p>Browse available courses:</p>
+  <!-- In a dynamic version, list courses from the database -->
+{% endblock %}

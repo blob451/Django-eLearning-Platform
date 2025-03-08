@@ -29,6 +29,8 @@ INSTALLED_APPS = [
     'users',
     'courses',
     'chat',
+    'notifications',
+    'pages',
 ]
 
 MIDDLEWARE = [
@@ -46,7 +48,7 @@ ROOT_URLCONF = 'elearning.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [BASE_DIR / 'templates'],  # Look for templates in the "templates" folder at the project root.
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -108,3 +110,6 @@ CELERY_BROKER_URL = 'redis://127.0.0.1:6379/0'
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+LOGIN_REDIRECT_URL = '/dashboard/'
+LOGOUT_REDIRECT_URL = '/'
