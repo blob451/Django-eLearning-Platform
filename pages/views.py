@@ -4,6 +4,7 @@ from django.contrib.auth.decorators import login_required
 from courses.models import Course, CourseInstance, Enrollment
 from django.utils import timezone
 from users.forms import RegistrationForm
+from django.contrib.auth.models import Group
 
 def home_view(request):
     return render(request, 'home.html')
@@ -16,19 +17,16 @@ def dashboard_view(request):
     return render(request, 'dashboard.html', {'enrollments': enrollments})
 
 def course_catalog_view(request):
-    from courses.models import Course
     courses = Course.objects.all()
     return render(request, 'course_catalog.html', {'courses': courses})
 
 def course_detail_view(request, pk):
-    from courses.models import Course
     course = get_object_or_404(Course, pk=pk)
     instances = course.instances.all()
     return render(request, 'course_detail.html', {'course': course, 'instances': instances})
 
 @login_required
 def enroll_in_instance(request, instance_id):
-    from courses.models import CourseInstance, Enrollment
     instance = get_object_or_404(CourseInstance, id=instance_id)
     if instance.status != 'Upcoming':
         messages.error(request, "Enrollment is allowed only for upcoming course instances.")
@@ -52,7 +50,15 @@ def signup_view(request):
     if request.method == "POST":
         form = RegistrationForm(request.POST)
         if form.is_valid():
-            form.save()
+            user = form.save()
+            # Assign user to the corresponding group based on role
+            role = form.cleaned_data.get("role").lower()
+            if role == "teacher":
+                group, created = Group.objects.get_or_create(name="Teachers")
+                group.user_set.add(user)
+            else:
+                group, created = Group.objects.get_or_create(name="Students")
+                group.user_set.add(user)
             messages.success(request, "Registration successful. You can now log in.")
             return redirect('login')
         else:
@@ -69,7 +75,6 @@ def custom_logout_view(request):
 
 @login_required
 def instructor_manage_view(request):
-    from courses.models import CourseInstance
     if request.user.role != 'teacher' and not request.user.is_superuser:
         messages.error(request, "Only instructors can access the management page.")
         return redirect('home')
