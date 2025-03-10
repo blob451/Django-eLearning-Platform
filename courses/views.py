@@ -1,106 +1,97 @@
-from rest_framework import generics, status
-from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.exceptions import PermissionDenied
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import render, get_object_or_404, redirect
+from django.urls import reverse_lazy
+from django.contrib import messages
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from .models import Course, CourseInstance, Enrollment, Feedback, StatusUpdate, CourseMaterial
-from .serializers import (
-    CourseSerializer, CourseInstanceSerializer, EnrollmentSerializer,
-    FeedbackSerializer, StatusUpdateSerializer, CourseMaterialSerializer
-)
-from rest_framework.permissions import IsAuthenticated
-from users.permissions import IsTeacher
+from .forms import CourseForm, CourseMaterialForm
 
-class CourseListCreateView(generics.ListCreateAPIView):
-    queryset = Course.objects.all()
-    serializer_class = CourseSerializer
-    permission_classes = [IsAuthenticated]
+# List view for course catalog
+class CourseListView(ListView):
+    model = Course
+    template_name = 'course_catalog.html'
+    context_object_name = 'courses'
 
-    def perform_create(self, serializer):
-        if not (self.request.user.role == 'teacher' or self.request.user.is_superuser):
-            raise PermissionDenied("Only instructors can create courses.")
-        serializer.save()
+# Detail view for a course
+class CourseDetailView(DetailView):
+    model = Course
+    template_name = 'course_detail.html'
+    context_object_name = 'course'
 
-class CourseDetailView(generics.RetrieveAPIView):
-    queryset = Course.objects.all()
-    serializer_class = CourseSerializer
-    permission_classes = [IsAuthenticated]
+# Mixin to restrict access to teachers
+class TeacherRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
+    def test_func(self):
+        return self.request.user.role.lower() == 'teacher' or self.request.user.is_superuser
 
-class EnrollmentView(APIView):
-    permission_classes = [IsAuthenticated]
+# Course creation view for teachers
+class CourseCreateView(TeacherRequiredMixin, CreateView):
+    model = Course
+    form_class = CourseForm
+    template_name = 'course_create.html'
+    
+    def form_valid(self, form):
+        form.instance.created_by = self.request.user
+        return super().form_valid(form)
+    
+    def get_success_url(self):
+        return reverse_lazy('course-detail', kwargs={'pk': self.object.pk})
 
-    def post(self, request, instance_id, format=None):
-        instance = get_object_or_404(CourseInstance, id=instance_id)
-        if instance.status != 'Upcoming':
-            return Response({"detail": "Enrollment allowed only for upcoming course instances."},
-                            status=status.HTTP_400_BAD_REQUEST)
-        if instance.enrollments.count() >= 30:
-            return Response({"detail": "This course instance is full."},
-                            status=status.HTTP_400_BAD_REQUEST)
-        student_enrollments = Enrollment.objects.filter(student=request.user, course_instance__semester=instance.semester).count()
-        if student_enrollments >= 5:
-            return Response({"detail": "You are already enrolled in 5 courses this semester."},
-                            status=status.HTTP_400_BAD_REQUEST)
-        enrollment = Enrollment.objects.create(student=request.user, course_instance=instance)
-        serializer = EnrollmentSerializer(enrollment)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+# Course editing view for teachers
+class CourseEditView(TeacherRequiredMixin, UpdateView):
+    model = Course
+    form_class = CourseForm
+    template_name = 'course_edit.html'
+    
+    def get_success_url(self):
+        return reverse_lazy('course-detail', kwargs={'pk': self.object.pk})
 
-class RemoveStudentView(APIView):
-    permission_classes = [IsAuthenticated, IsTeacher]
+# Course deletion view for teachers
+class CourseDeleteView(TeacherRequiredMixin, DeleteView):
+    model = Course
+    template_name = 'course_delete.html'
+    success_url = reverse_lazy('course-catalog')
 
-    def post(self, request, instance_id, format=None):
-        instance = get_object_or_404(CourseInstance, id=instance_id)
-        if instance.instructor != request.user:
-            raise PermissionDenied("You are not the instructor for this course instance.")
-        student_id = request.data.get('student_id')
+# Enrollment view (function-based for simplicity)
+def enrollment_view(request, instance_id):
+    instance = get_object_or_404(CourseInstance, id=instance_id)
+    if not request.user.is_authenticated:
+        messages.error(request, "You must be logged in to enroll.")
+        return redirect('login')
+    if instance.status != 'Upcoming':
+        messages.error(request, "Enrollment is allowed only for upcoming course instances.")
+        return redirect('course-detail', pk=instance.course.id)
+    if instance.enrollments.count() >= 30:
+        messages.error(request, "This course instance is full.")
+        return redirect('course-detail', pk=instance.course.id)
+    count = request.user.enrollments.filter(course_instance__semester=instance.semester).count()
+    if count >= 5:
+        messages.error(request, "You are already enrolled in 5 courses this semester.")
+        return redirect('dashboard')
+    Enrollment.objects.create(student=request.user, course_instance=instance)
+    messages.success(request, "You have been enrolled successfully!")
+    return redirect('dashboard')
+
+# Enrollment management view for teachers
+def course_enrollment_manage_view(request, pk):
+    course = get_object_or_404(Course, pk=pk)
+    if not request.user.is_authenticated or (request.user.role.lower() != 'teacher' and not request.user.is_superuser):
+        messages.error(request, "Only teachers can manage enrollments.")
+        return redirect('course-detail', pk=course.pk)
+    enrollments = Enrollment.objects.filter(course_instance__course=course)
+    if request.method == "POST":
+        student_id = request.POST.get("student_id")
         if not student_id:
-            return Response({"detail": "student_id is required."}, status=status.HTTP_400_BAD_REQUEST)
-        enrollment = Enrollment.objects.filter(course_instance=instance, student__id=student_id).first()
-        if not enrollment:
-            return Response({"detail": "Student not enrolled."}, status=status.HTTP_400_BAD_REQUEST)
-        enrollment.delete()
-        return Response({"detail": "Student removed successfully."}, status=status.HTTP_200_OK)
-
-class FeedbackListCreateView(generics.ListCreateAPIView):
-    serializer_class = FeedbackSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        instance_id = self.kwargs.get('pk')
-        return Feedback.objects.filter(course_instance__id=instance_id)
-
-    def perform_create(self, serializer):
-        instance_id = self.kwargs.get('pk')
-        instance = get_object_or_404(CourseInstance, id=instance_id)
-        serializer.save(course_instance=instance, user=self.request.user)
-
-class StatusUpdateCreateView(generics.CreateAPIView):
-    queryset = StatusUpdate.objects.all()
-    serializer_class = StatusUpdateSerializer
-    permission_classes = [IsAuthenticated]
-
-    def perform_create(self, serializer):
-        serializer.save(user=self.request.user)
-
-class StatusUpdateListView(generics.ListAPIView):
-    serializer_class = StatusUpdateSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        username = self.kwargs.get('username')
-        return StatusUpdate.objects.filter(user__username=username)
-
-class CourseMaterialListCreateView(generics.ListCreateAPIView):
-    serializer_class = CourseMaterialSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        instance_id = self.kwargs.get('pk')
-        return CourseMaterial.objects.filter(course_instance__id=instance_id)
-
-    def perform_create(self, serializer):
-        instance_id = self.kwargs.get('pk')
-        instance = get_object_or_404(CourseInstance, id=instance_id)
-        if self.request.user != instance.instructor:
-            raise PermissionDenied("Only the course instructor can upload materials.")
-        serializer.save(course_instance=instance)
+            messages.error(request, "Student ID is required.")
+        else:
+            enrollment = Enrollment.objects.filter(course_instance__course=course, student__id=student_id).first()
+            if enrollment:
+                enrollment.delete()
+                messages.success(request, "Student removed successfully.")
+            else:
+                messages.error(request, "Enrollment not found.")
+        return redirect('course-enrollment-manage', pk=course.pk)
+    context = {
+        'course': course,
+        'enrollments': enrollments,
+    }
+    return render(request, 'course_enrollment_manage.html', context)

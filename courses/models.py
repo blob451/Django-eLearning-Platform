@@ -5,6 +5,13 @@ from django.utils import timezone
 class Course(models.Model):
     name = models.CharField(max_length=20, unique=True)
     description = models.TextField(blank=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_courses'
+    )
 
     def __str__(self):
         return self.name
@@ -25,7 +32,12 @@ class CourseInstance(models.Model):
     start_date = models.DateField()
     end_date = models.DateField()
     status = models.CharField(max_length=10, choices=STATUS_CHOICES, blank=True)
-    instructor = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='course_instances')
+    instructor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='course_instances'
+    )
 
     def __str__(self):
         return f"{self.course.name} - {self.semester}"
@@ -41,8 +53,16 @@ class CourseInstance(models.Model):
         self.save()
 
 class Enrollment(models.Model):
-    student = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='enrollments')
-    course_instance = models.ForeignKey(CourseInstance, on_delete=models.CASCADE, related_name='enrollments')
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='enrollments'
+    )
+    course_instance = models.ForeignKey(
+        CourseInstance,
+        on_delete=models.CASCADE,
+        related_name='enrollments'
+    )
     enrolled_on = models.DateTimeField(default=timezone.now)
 
     class Meta:
@@ -52,8 +72,16 @@ class Enrollment(models.Model):
         return f"{self.student.username} enrolled in {self.course_instance}"
 
 class Feedback(models.Model):
-    course_instance = models.ForeignKey(CourseInstance, on_delete=models.CASCADE, related_name='feedbacks')
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='feedbacks')
+    course_instance = models.ForeignKey(
+        CourseInstance,
+        on_delete=models.CASCADE,
+        related_name='feedbacks'
+    )
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='feedbacks'
+    )
     text = models.TextField()
     rating = models.PositiveSmallIntegerField(null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
@@ -62,7 +90,11 @@ class Feedback(models.Model):
         return f"Feedback by {self.user.username} on {self.course_instance}"
 
 class StatusUpdate(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='status_updates')
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='status_updates'
+    )
     content = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
 
@@ -70,7 +102,11 @@ class StatusUpdate(models.Model):
         return f"Status by {self.user.username} at {self.timestamp}"
 
 class CourseMaterial(models.Model):
-    course_instance = models.ForeignKey(CourseInstance, on_delete=models.CASCADE, related_name='materials')
+    course_instance = models.ForeignKey(
+        CourseInstance,
+        on_delete=models.CASCADE,
+        related_name='materials'
+    )
     file = models.FileField(upload_to='course_materials/')
     description = models.TextField(blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
@@ -78,7 +114,7 @@ class CourseMaterial(models.Model):
     def __str__(self):
         return f"Material for {self.course_instance}"
 
-# NEW: Assignment model representing upcoming deadlines
+# (Optional) Assignment model for deadlines – not detailed here.
 class Assignment(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='assignments')
     title = models.CharField(max_length=255)

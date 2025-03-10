@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% block title %}Manage Enrollments for {{ course.name }}{% endblock %}
+{% block content %}
+  <h1>Manage Enrollments for {{ course.name }}</h1>
+  {% if enrollments %}
+    <ul class="list-group">
+      {% for enrollment in enrollments %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          {{ enrollment.student.username }}
+          <form method="post" style="display:inline;">
+            {% csrf_token %}
+            <input type="hidden" name="student_id" value="{{ enrollment.student.id }}">
+            <button type="submit" class="btn btn-sm btn-danger">Remove</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p>No students enrolled in this course.</p>
+  {% endif %}
+{% endblock %}

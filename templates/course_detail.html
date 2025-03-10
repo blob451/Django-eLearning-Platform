@@ -1,10 +1,16 @@
 {% extends 'base.html' %}
-
 {% block title %}{{ course.name }} Details{% endblock %}
-
 {% block content %}
   <h1>{{ course.name }} Details</h1>
   <p>{{ course.description }}</p>
+
+  {% if user.is_authenticated and user.role|lower == "teacher" %}
+    <div class="mb-3">
+      <a href="{% url 'course-edit' course.pk %}" class="btn btn-warning">Edit Course</a>
+      <a href="{% url 'course-delete' course.pk %}" class="btn btn-danger">Delete Course</a>
+      <a href="{% url 'course-enrollment-manage' course.pk %}" class="btn btn-info">Manage Enrollments</a>
+    </div>
+  {% endif %}
 
   <h2>Offerings</h2>
   <table class="table">
@@ -20,7 +26,7 @@
       </tr>
     </thead>
     <tbody>
-      {% for instance in instances %}
+      {% for instance in course.instances.all %}
         <tr>
           <td>{{ instance.semester }}</td>
           <td>{{ instance.start_date }}</td>
@@ -47,4 +53,33 @@
       {% endfor %}
     </tbody>
   </table>
+
+  {% if user.is_authenticated and user.role|lower == "teacher" %}
+    <h2>Course Materials</h2>
+    {% if course.instances.first.materials.all %}
+      <ul class="list-group mb-3">
+        {% for material in course.instances.first.materials.all %}
+          <li class="list-group-item">
+            <a href="{{ material.file.url }}">{{ material.file.name }}</a>
+            <p>{{ material.description }}</p>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p>No materials uploaded yet.</p>
+    {% endif %}
+    <h3>Upload New Material</h3>
+    <form method="post" action="{% url 'course-materials' course.instances.first.id %}" enctype="multipart/form-data">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label for="id_file" class="form-label">File:</label>
+        <input type="file" name="file" class="form-control" id="id_file" required>
+      </div>
+      <div class="mb-3">
+        <label for="id_description" class="form-label">Description:</label>
+        <textarea name="description" class="form-control" id="id_description"></textarea>
+      </div>
+      <button type="submit" class="btn btn-success">Upload Material</button>
+    </form>
+  {% endif %}
 {% endblock %}
