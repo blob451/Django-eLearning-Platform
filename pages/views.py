@@ -3,6 +3,7 @@ from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from courses.models import Course, CourseInstance, Enrollment
 from django.utils import timezone
+from users.forms import RegistrationForm
 
 def home_view(request):
     return render(request, 'home.html')
@@ -15,16 +16,19 @@ def dashboard_view(request):
     return render(request, 'dashboard.html', {'enrollments': enrollments})
 
 def course_catalog_view(request):
+    from courses.models import Course
     courses = Course.objects.all()
     return render(request, 'course_catalog.html', {'courses': courses})
 
 def course_detail_view(request, pk):
+    from courses.models import Course
     course = get_object_or_404(Course, pk=pk)
     instances = course.instances.all()
     return render(request, 'course_detail.html', {'course': course, 'instances': instances})
 
 @login_required
 def enroll_in_instance(request, instance_id):
+    from courses.models import CourseInstance, Enrollment
     instance = get_object_or_404(CourseInstance, id=instance_id)
     if instance.status != 'Upcoming':
         messages.error(request, "Enrollment is allowed only for upcoming course instances.")
@@ -46,17 +50,16 @@ def chat_view(request):
 
 def signup_view(request):
     if request.method == "POST":
-        username = request.POST.get("username")
-        email = request.POST.get("email")
-        password = request.POST.get("password")
-        role = request.POST.get("role")
-        from users.models import User
-        user = User.objects.create_user(username=username, email=email, password=password, role=role)
-        user.is_active = False  # Pending approval
-        user.save()
-        messages.success(request, "Account created. Await approval.")
-        return redirect('login')
-    return render(request, 'login.html')
+        form = RegistrationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Registration successful. You can now log in.")
+            return redirect('login')
+        else:
+            messages.error(request, "Please correct the errors below.")
+    else:
+        form = RegistrationForm()
+    return render(request, "signup.html", {"form": form})
 
 def custom_logout_view(request):
     from django.contrib.auth import logout
@@ -66,6 +69,7 @@ def custom_logout_view(request):
 
 @login_required
 def instructor_manage_view(request):
+    from courses.models import CourseInstance
     if request.user.role != 'teacher' and not request.user.is_superuser:
         messages.error(request, "Only instructors can access the management page.")
         return redirect('home')
