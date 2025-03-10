@@ -1,15 +1,17 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from courses.models import Course, CourseInstance, Enrollment
+from courses.models import Course, CourseInstance, Enrollment, Assignment
 from django.utils import timezone
-from users.forms import RegistrationForm
-from django.contrib.auth.models import Group
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 def home_view(request):
     return render(request, 'home.html')
 
 def profile_view(request):
+    # This view might be a generic dashboard; we now add a dedicated profile page below.
     return render(request, 'profile.html')
 
 def dashboard_view(request):
@@ -47,17 +49,19 @@ def chat_view(request):
     return render(request, 'chat.html')
 
 def signup_view(request):
+    from users.forms import RegistrationForm
     if request.method == "POST":
         form = RegistrationForm(request.POST)
         if form.is_valid():
             user = form.save()
-            # Assign user to the corresponding group based on role
+            # Assign user to appropriate group
+            from django.contrib.auth.models import Group
             role = form.cleaned_data.get("role").lower()
             if role == "teacher":
-                group, created = Group.objects.get_or_create(name="Teachers")
+                group, _ = Group.objects.get_or_create(name="Teachers")
                 group.user_set.add(user)
             else:
-                group, created = Group.objects.get_or_create(name="Students")
+                group, _ = Group.objects.get_or_create(name="Students")
                 group.user_set.add(user)
             messages.success(request, "Registration successful. You can now log in.")
             return redirect('login')
@@ -80,3 +84,39 @@ def instructor_manage_view(request):
         return redirect('home')
     instances = CourseInstance.objects.filter(instructor=request.user)
     return render(request, 'instructor_manage.html', {'instances': instances})
+
+@login_required
+def profile_detail_view(request, username):
+    # Ensure that the profile can be viewed by the user themselves or publicly (depending on your privacy design)
+    profile_user = get_object_or_404(User, username=username)
+    # For a student, get enrolled courses; for a teacher, get courses taught.
+    if profile_user.role.lower() == "teacher":
+        # Query courses taught by this teacher (via course instances)
+        courses_taught = profile_user.course_instances.select_related('course').all()
+        course_list = {instance.course for instance in courses_taught}
+    else:
+        # For students, get enrollments
+        enrollments = profile_user.enrollments.select_related('course_instance__course').all()
+        course_list = [en.course_instance for en in enrollments]
+
+    # Recent status updates (assuming StatusUpdate is defined in courses.models)
+    status_updates = profile_user.status_updates.all().order_by('-timestamp')[:5]
+
+    # Upcoming deadlines: for students, gather assignments from enrolled courses with due_date in the future
+    upcoming_deadlines = None
+    if profile_user.role.lower() != "teacher":
+        today = timezone.now().date()
+        # Use Assignment model defined in courses.models
+        from courses.models import Assignment
+        upcoming_deadlines = Assignment.objects.filter(
+            course__enrollments__student=profile_user,
+            due_date__gte=today
+        ).order_by('due_date').distinct()[:5]
+
+    context = {
+        'profile_user': profile_user,
+        'course_list': course_list,
+        'status_updates': status_updates,
+        'upcoming_deadlines': upcoming_deadlines,
+    }
+    return render(request, 'profile_detail.html', context)

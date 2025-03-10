@@ -3,8 +3,7 @@ from django.conf import settings
 from django.utils import timezone
 
 class Course(models.Model):
-    # Updated: Set a default value for name so that migrations don't require a one-off default
-    name = models.CharField(max_length=20, unique=True, default="TBD")
+    name = models.CharField(max_length=20, unique=True)
     description = models.TextField(blank=True)
 
     def __str__(self):
@@ -78,3 +77,13 @@ class CourseMaterial(models.Model):
 
     def __str__(self):
         return f"Material for {self.course_instance}"
+
+# NEW: Assignment model representing upcoming deadlines
+class Assignment(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name='assignments')
+    title = models.CharField(max_length=255)
+    description = models.TextField(blank=True)
+    due_date = models.DateField()
+
+    def __str__(self):
+        return f"{self.title} for {self.course.name}"

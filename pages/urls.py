@@ -14,4 +14,5 @@ urlpatterns = [
     path('courses/enroll/<int:instance_id>/', views.enroll_in_instance, name='enroll_instance'),
     path('chat/', views.chat_view, name='chat'),
     path('instructor_manage/', views.instructor_manage_view, name='instructor_manage'),
+    path('users/<str:username>/', views.profile_detail_view, name='profile_detail'),
 ]
